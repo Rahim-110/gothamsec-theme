@@ -28,14 +28,6 @@
         </p>
 
         <div class="d-flex gap-2 justify-center flex-wrap">
-            {% if authed() %}
-            <a href="{{ url_for('challenges.listing') }}" class="btn btn-primary btn-lg">
-                🎯 View Challenges
-            </a>
-            <a href="{{ url_for('scoreboard.listing') }}" class="btn btn-secondary btn-lg">
-                🏆 Scoreboard
-            </a>
-            {% else %}
             {% if get_config('registration_visibility') != False %}
             <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
                 🚀 Register Now
@@ -44,7 +36,9 @@
             <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">
                 🔐 Login
             </a>
-            {% endif %}
+            <a href="{{ url_for('challenges.listing') }}" class="btn btn-secondary btn-lg">
+                🎯 Challenges
+            </a>
         </div>
     </div>
 </div>
@@ -175,7 +169,6 @@
         <p class="text-muted mb-4" style="font-size: 1.2rem;">Join hundreds of hackers competing in our CTF competition
         </p>
 
-        {% if not authed() %}
         {% if get_config('registration_visibility') != False %}
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
             🚀 Get Started Now
@@ -183,11 +176,6 @@
         {% else %}
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
             🔐 Login to Compete
-        </a>
-        {% endif %}
-        {% else %}
-        <a href="{{ url_for('challenges.listing') }}" class="btn btn-primary btn-lg">
-            🎯 Start Hacking
         </a>
         {% endif %}
     </div>

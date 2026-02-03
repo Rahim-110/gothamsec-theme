@@ -618,16 +618,10 @@
                 {% endif %}
 
                 <li><a href="{{ url_for('scoreboard.listing') }}" class="nav-link">Scoreboard</a></li>
-
-                {% if authed() %}
                 <li><a href="{{ url_for('challenges.listing') }}" class="nav-link">Challenges</a></li>
-                <li><a href="{{ url_for('users.private') }}" class="nav-link">Profile</a></li>
-                <li><a href="{{ url_for('views.logout') }}" class="nav-link">Logout</a></li>
-                {% else %}
                 <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
                 {% if get_config('registration_visibility') != False %}
                 <li><a href="{{ url_for('auth.register') }}" class="nav-link">Register</a></li>
-                {% endif %}
                 {% endif %}
             </ul>
         </div>
