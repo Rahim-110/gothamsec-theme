@@ -169,6 +169,21 @@
     <script src="{{ url_for('views.themes', path='js/theme.js') }}"></script>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Fallback: Force hide loading screen -->
+    <script>
+        (function () {
+            var ls = document.getElementById('loading-screen');
+            if (ls) {
+                // Hide after 2 seconds no matter what
+                setTimeout(function () {
+                    ls.style.opacity = '0';
+                    ls.style.pointerEvents = 'none';
+                    setTimeout(function () { ls.remove(); }, 500);
+                }, 2000);
+            }
+        })();
+    </script>
 </body>
 
 </html>
