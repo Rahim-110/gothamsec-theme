@@ -21,9 +21,6 @@
 
     <title>{% block title %}{{ get_config("ctf_name") }}{% endblock %}</title>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('views.themes', path='img/favicon.png') }}">
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,61 +28,562 @@
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap"
         rel="stylesheet">
 
-    <!-- Theme CSS -->
-    <link rel="stylesheet" href="{{ url_for('views.themes', path='css/theme.css') }}">
-
-    {% block head %}{% endblock %}
-
+    <!-- Theme CSS - Inline for reliability -->
     <style>
-        /* Inline critical CSS */
-        .loading-screen {
+        /* ============================================
+           GOTHAMSEC CTFd THEME - CORE STYLES
+           Cyberpunk/Tech Noir aesthetic
+           ============================================ */
+
+        :root {
+            --gth-black: #000000;
+            --gth-dark: #0a0a0f;
+            --gth-darker: #050508;
+            --gth-gray-dark: #12121a;
+            --gth-gray-medium: #1a1a2e;
+            --gth-gray-light: #2a2a4a;
+            --gth-cyan: #00d9ff;
+            --gth-cyan-dark: #00a8cc;
+            --gth-purple: #b026ff;
+            --gth-purple-dark: #8b1acc;
+            --gth-pink: #ff2a6d;
+            --gth-green: #05d9e8;
+            --gth-yellow: #ffd319;
+            --gth-red: #ff0044;
+            --gth-white: #ffffff;
+            --gth-text: #e0e0e0;
+            --gth-text-muted: #888899;
+            --gth-gradient-primary: linear-gradient(135deg, var(--gth-cyan), var(--gth-purple));
+            --gth-gradient-secondary: linear-gradient(135deg, var(--gth-purple), var(--gth-pink));
+            --gth-glow-cyan: 0 0 20px rgba(0, 217, 255, 0.5), 0 0 40px rgba(0, 217, 255, 0.3);
+            --gth-glow-purple: 0 0 20px rgba(176, 38, 255, 0.5), 0 0 40px rgba(176, 38, 255, 0.3);
+            --gth-font-display: 'Orbitron', sans-serif;
+            --gth-font-body: 'Rajdhani', sans-serif;
+            --gth-font-mono: 'Fira Code', monospace;
+            --gth-radius-sm: 4px;
+            --gth-radius-md: 8px;
+            --gth-radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--gth-font-body);
+            background: var(--gth-dark);
+            color: var(--gth-text);
+            line-height: 1.6;
+            font-size: 16px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: var(--gth-font-display);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            background: var(--gth-gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h1 {
+            font-size: 3rem;
+        }
+
+        h2 {
+            font-size: 2.25rem;
+        }
+
+        h3 {
+            font-size: 1.75rem;
+        }
+
+        h4 {
+            font-size: 1.25rem;
+        }
+
+        a {
+            color: var(--gth-cyan);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--gth-purple);
+            text-shadow: var(--gth-glow-cyan);
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Navbar */
+        .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--gth-font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gth-white);
+        }
+
+        .navbar-brand:hover {
+            color: var(--gth-cyan);
+        }
+
+        .navbar-logo {
+            width: 45px;
+            height: 45px;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            font-family: var(--gth-font-display);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gth-text);
+            padding: 0.5rem 0;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-link:hover {
+            color: var(--gth-cyan);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
             bottom: 0;
-            background: #000000;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gth-gradient-primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .navbar-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .navbar-toggle span {
+            width: 24px;
+            height: 2px;
+            background: var(--gth-cyan);
+            transition: all 0.3s ease;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            z-index: 10000;
+            position: relative;
+            text-align: center;
+            padding: 6rem 1.5rem 4rem;
+            background: radial-gradient(ellipse at center, rgba(0, 217, 255, 0.1) 0%, transparent 70%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 40px rgba(0, 217, 255, 0.5);
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--gth-text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            font-family: var(--gth-font-display);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: var(--gth-radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--gth-gradient-primary);
+            color: var(--gth-black);
+        }
+
+        .btn-primary:hover {
+            box-shadow: var(--gth-glow-cyan);
+            transform: translateY(-2px);
+            color: var(--gth-black);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--gth-cyan);
+            border: 2px solid var(--gth-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 217, 255, 0.1);
+            box-shadow: var(--gth-glow-cyan);
+            transform: translateY(-2px);
+        }
+
+        .btn-lg {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+        }
+
+        /* Glass Panel */
+        .glass-panel {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: var(--gth-radius-lg);
+            padding: 2rem;
+            position: relative;
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gth-cyan), transparent);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--gth-gray-dark);
+            border: 1px solid var(--gth-gray-light);
+            border-radius: var(--gth-radius-lg);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--gth-cyan);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0, 217, 255, 0.2);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-cyan {
+            color: var(--gth-cyan);
+        }
+
+        .text-purple {
+            color: var(--gth-purple);
+        }
+
+        .text-muted {
+            color: var(--gth-text-muted);
+        }
+
+        .mb-1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 2rem;
+        }
+
+        .mt-2 {
+            margin-top: 1rem;
+        }
+
+        .mt-3 {
+            margin-top: 1.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 2rem;
+        }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+
+        .gap-2 {
+            gap: 1rem;
+        }
+
+        .gap-3 {
+            gap: 1.5rem;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        /* Icon Box */
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gth-gradient-primary);
+            border-radius: var(--gth-radius-md);
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--gth-darker);
+            border-top: 1px solid rgba(0, 217, 255, 0.2);
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-family: var(--gth-font-display);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gth-cyan);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gth-gray-dark);
+            border: 1px solid var(--gth-gray-light);
+            border-radius: var(--gth-radius-md);
+            color: var(--gth-text);
+            font-family: var(--gth-font-body);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--gth-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar-nav {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 15, 0.98);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1rem;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .navbar-nav.active {
+                transform: translateX(0);
+            }
+
+            .navbar-toggle {
+                display: flex;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .btn-lg {
+                padding: 0.875rem 1.5rem;
+                font-size: 0.9rem;
+            }
         }
     </style>
+
+    {% block head %}{% endblock %}
 </head>
 
 <body>
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loading-screen">
-        <div class="loading-logo-container">
-            <svg class="loading-logo" viewBox="0 0 100 100" width="120" height="120">
-                <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#00d9ff" />
-                        <stop offset="100%" style="stop-color:#b026ff" />
-                    </linearGradient>
-                </defs>
-                <!-- Shield outline -->
-                <path d="M50 5 L90 25 L90 55 Q90 75 50 95 Q10 75 10 55 L10 25 Z" fill="none" stroke="url(#logoGradient)"
-                    stroke-width="2" opacity="0.5" />
-                <!-- Bat shape -->
-                <path d="M50 30 L35 45 L20 40 L30 55 L25 70 L50 60 L75 70 L70 55 L80 40 L65 45 Z"
-                    fill="url(#logoGradient)" opacity="0.8" />
-                <!-- Circuit lines -->
-                <path d="M30 50 L40 50 L45 55 L55 55 L60 50 L70 50" fill="none" stroke="#00d9ff" stroke-width="1.5"
-                    stroke-dasharray="100" stroke-dashoffset="100">
-                    <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
-                </path>
-            </svg>
-        </div>
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Initializing...</div>
-    </div>
-
-    <!-- Circuit Background Canvas -->
-    <canvas id="circuit-canvas"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
-
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
@@ -102,10 +600,11 @@
                     <path d="M50 30 L35 45 L20 40 L30 55 L25 70 L50 60 L75 70 L70 55 L80 40 L65 45 Z"
                         fill="url(#navLogoGradient)" />
                 </svg>
-                <span class="navbar-title">{{ get_config("ctf_name") }}</span>
+                <span>{{ get_config("ctf_name") }}</span>
             </a>
 
-            <button class="navbar-toggle" aria-label="Toggle navigation">
+            <button class="navbar-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.navbar-nav').classList.toggle('active')">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -135,7 +634,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="page-content" style="padding-top: 90px;">
+    <main style="padding-top: 80px;">
         {% block content %}{% endblock %}
     </main>
 
@@ -143,47 +642,16 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-text">
-                    <span>Powered by</span>
-                    <a href="https://ctfd.io" target="_blank" rel="noopener">CTFd</a>
-                    <span>|</span>
-                    <span>Theme by</span>
-                    <span class="text-cyan">GothamSec</span>
-                </div>
-                <div class="footer-links">
-                    {% if get_config('privacy_url') %}
-                    <a href="{{ get_config('privacy_url') }}" class="footer-link">Privacy</a>
-                    {% endif %}
-                    {% if get_config('tos_url') %}
-                    <a href="{{ get_config('tos_url') }}" class="footer-link">Terms</a>
-                    {% endif %}
-                </div>
+                <span>Powered by</span>
+                <a href="https://ctfd.io" target="_blank" rel="noopener">CTFd</a>
+                <span>|</span>
+                <span>Theme by</span>
+                <span class="text-cyan">GothamSec</span>
             </div>
         </div>
     </footer>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toast-container"></div>
-
-    <!-- Scripts -->
-    <script src="{{ url_for('views.themes', path='js/theme.js') }}"></script>
-
     {% block scripts %}{% endblock %}
-
-    <!-- Fallback: Force hide loading screen -->
-    <script>
-        (function () {
-            var ls = document.getElementById('loading-screen');
-            if (ls) {
-                // Hide after 2 seconds no matter what
-                setTimeout(function () {
-                    ls.style.opacity = '0';
-                    ls.style.pointerEvents = 'none';
-                    setTimeout(function () { ls.remove(); }, 500);
-                }, 2000);
-            }
-        })();
-    </script>
 </body>
 
 </html>
