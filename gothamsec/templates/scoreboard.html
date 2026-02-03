@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Scoreboard - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 30vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Scoreboard</h1>
+            <p class="hero-subtitle">Real-time rankings. Who will claim the crown?</p>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="d-flex justify-center gap-3 mb-4" style="flex-wrap: wrap;">
+        <div class="glass-panel text-center" style="padding: 1.5rem 2rem; min-width: 150px;">
+            <div class="text-cyan" style="font-size: 2rem; font-weight: 700;" id="total-teams">--</div>
+            <div class="text-muted">{{ 'Teams' if get_config('user_mode') == 'teams' else 'Players' }}</div>
+        </div>
+        <div class="glass-panel text-center" style="padding: 1.5rem 2rem; min-width: 150px;">
+            <div class="text-purple" style="font-size: 2rem; font-weight: 700;" id="total-solves">--</div>
+            <div class="text-muted">Total Solves</div>
+        </div>
+        <div class="glass-panel text-center" style="padding: 1.5rem 2rem; min-width: 150px;">
+            <div class="text-cyan" style="font-size: 2rem; font-weight: 700;" id="total-challenges">--</div>
+            <div class="text-muted">Challenges</div>
+        </div>
+    </div>
+
+    <!-- Top 3 Podium -->
+    <div class="d-flex justify-center align-center gap-3 mb-4" id="podium" style="flex-wrap: wrap; display: none;">
+        <!-- 2nd Place -->
+        <div class="glass-panel text-center podium-item" id="podium-2" style="padding: 2rem; min-width: 200px;">
+            <div class="text-muted" style="font-size: 3rem;">🥈</div>
+            <h3 class="podium-name">--</h3>
+            <div class="podium-score text-cyan">--</div>
+        </div>
+        <!-- 1st Place -->
+        <div class="glass-panel text-center podium-item" id="podium-1"
+            style="padding: 2rem; min-width: 220px; transform: scale(1.1);">
+            <div style="font-size: 4rem;">🥇</div>
+            <h3 class="podium-name">--</h3>
+            <div class="podium-score text-cyan" style="font-size: 1.5rem;">--</div>
+        </div>
+        <!-- 3rd Place -->
+        <div class="glass-panel text-center podium-item" id="podium-3" style="padding: 2rem; min-width: 200px;">
+            <div class="text-muted" style="font-size: 3rem;">🥉</div>
+            <h3 class="podium-name">--</h3>
+            <div class="podium-score text-cyan">--</div>
+        </div>
+    </div>
+
+    <!-- Scoreboard Table -->
+    <div class="glass-panel">
+        <table class="scoreboard-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Rank</th>
+                    <th>{{ 'Team' if get_config('user_mode') == 'teams' else 'Player' }}</th>
+                    <th style="width: 120px;">Score</th>
+                    <th style="width: 200px;">Progress</th>
+                </tr>
+            </thead>
+            <tbody id="scoreboard-body">
+                <!-- Rows loaded dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-center gap-2 mt-3" id="pagination"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const scoreboardBody = document.getElementById('scoreboard-body');
+        const podium = document.getElementById('podium');
+        let standings = [];
+        let maxScore = 0;
+
+        async function fetchScoreboard() {
+            try {
+                const mode = '{{ get_config("user_mode") }}';
+                const endpoint = mode === 'teams' ? '/api/v1/scoreboard/top/100' : '/api/v1/scoreboard/top/100';
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (data.success) {
+                    standings = data.data;
+                    if (standings.length > 0) {
+                        maxScore = standings[0].score || 1;
+                    }
+
+                    renderPodium();
+                    renderScoreboard();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Error fetching scoreboard:', error);
+                GothamSecToast.error('Failed to load scoreboard');
+            }
+        }
+
+        function renderPodium() {
+            if (standings.length >= 3) {
+                podium.style.display = 'flex';
+
+                for (let i = 0; i < 3; i++) {
+                    const place = standings[i];
+                    const podiumItem = document.getElementById(`podium-${i + 1}`);
+                    podiumItem.querySelector('.podium-name').textContent = place.name;
+                    podiumItem.querySelector('.podium-score').textContent = `${place.score} pts`;
+                }
+            }
+        }
+
+        function renderScoreboard() {
+            scoreboardBody.innerHTML = '';
+
+            standings.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                const progress = maxScore > 0 ? (entry.score / maxScore) * 100 : 0;
+
+                let rankClass = '';
+                if (index === 0) rankClass = 'rank-1';
+                else if (index === 1) rankClass = 'rank-2';
+                else if (index === 2) rankClass = 'rank-3';
+
+                row.className = rankClass;
+                row.innerHTML = `
+                <td>
+                    <span class="rank-number">${index + 1}</span>
+                </td>
+                <td>
+                    <a href="${'{{ get_config("user_mode") }}' === 'teams' ? '/teams/' : '/users/'}${entry.account_id}" class="text-cyan">
+                        ${entry.name}
+                    </a>
+                </td>
+                <td>
+                    <span class="score-value">${entry.score}</span>
+                </td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${progress}%"></div>
+                    </div>
+                </td>
+            `;
+
+                scoreboardBody.appendChild(row);
+            });
+        }
+
+        async function updateStats() {
+            try {
+                // Get total challenges
+                const chalResp = await fetch('/api/v1/challenges');
+                const chalData = await chalResp.json();
+                if (chalData.success) {
+                    document.getElementById('total-challenges').textContent = chalData.data.length;
+                }
+
+                // Total participants
+                document.getElementById('total-teams').textContent = standings.length;
+
+                // Calculate total solves (approximation)
+                const totalSolves = standings.reduce((acc, entry) => acc + (entry.score > 0 ? 1 : 0), 0);
+                document.getElementById('total-solves').textContent = totalSolves;
+
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchScoreboard, 30000);
+
+        // Initialize
+        fetchScoreboard();
+    })();
+</script>
+{% endblock %}

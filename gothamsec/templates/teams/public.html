@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px;">
+    <!-- Team Header -->
+    <div class="glass-panel mb-4">
+        <div class="d-flex align-center gap-3" style="flex-wrap: wrap;">
+            <!-- Avatar -->
+            <div
+                style="width: 100px; height: 100px; background: var(--gth-gradient-purple-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; flex-shrink: 0;">
+                {{ team.name[0] | upper }}
+            </div>
+
+            <div style="flex: 1;">
+                <h1 class="mb-1">{{ team.name }}</h1>
+                {% if team.affiliation %}
+                <p class="text-muted mb-1">{{ team.affiliation }}</p>
+                {% endif %}
+                {% if team.country %}
+                <span class="badge badge-cyan">{{ team.country }}</span>
+                {% endif %}
+            </div>
+
+            <div class="text-right">
+                <div class="challenge-points" style="font-size: 2.5rem;">
+                    {{ score }} <span>pts</span>
+                </div>
+                <div class="text-muted">Rank #{{ place }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="d-flex gap-3 mb-4" style="flex-wrap: wrap;">
+        <div class="glass-panel text-center" style="flex: 1; min-width: 150px; padding: 1.5rem;">
+            <div class="text-cyan" style="font-size: 2rem; font-weight: 700;">{{ team.members | length }}</div>
+            <div class="text-muted">Members</div>
+        </div>
+        <div class="glass-panel text-center" style="flex: 1; min-width: 150px; padding: 1.5rem;">
+            <div class="text-purple" style="font-size: 2rem; font-weight: 700;">{{ solves | length }}</div>
+            <div class="text-muted">Solves</div>
+        </div>
+        <div class="glass-panel text-center" style="flex: 1; min-width: 150px; padding: 1.5rem;">
+            <div class="text-cyan" style="font-size: 2rem; font-weight: 700;">#{{ place }}</div>
+            <div class="text-muted">Rank</div>
+        </div>
+    </div>
+
+    <!-- Members -->
+    <div class="glass-panel mb-4">
+        <h2 class="text-purple mb-3">Team Members</h2>
+        <div class="d-flex gap-2" style="flex-wrap: wrap;">
+            {% for member in team.members %}
+            <a href="{{ url_for('users.public', user_id=member.id) }}" class="badge badge-cyan"
+                style="padding: 0.5rem 1rem; font-size: 1rem;">
+                {{ member.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Solves -->
+    {% if solves %}
+    <div class="glass-panel">
+        <h2 class="text-cyan mb-3">Team Solves</h2>
+        <div class="scoreboard-table">
+            <table class="w-100">
+                <thead>
+                    <tr>
+                        <th>Challenge</th>
+                        <th>Category</th>
+                        <th>Value</th>
+                        <th>Solved By</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solve in solves %}
+                    <tr>
+                        <td>{{ solve.challenge.name }}</td>
+                        <td><span class="badge badge-purple">{{ solve.challenge.category }}</span></td>
+                        <td class="text-cyan">{{ solve.challenge.value }}</td>
+                        <td>{{ solve.user.name }}</td>
+                        <td class="text-muted">{{ solve.date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

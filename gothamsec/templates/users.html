@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Users - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 25vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Players</h1>
+            <p class="hero-subtitle">The elite hackers of the arena.</p>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-container mb-4">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="user-search" placeholder="Search players...">
+    </div>
+
+    <!-- Users Grid -->
+    <div class="challenge-grid" id="users-grid">
+        <!-- Users loaded dynamically -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const usersGrid = document.getElementById('users-grid');
+        const searchInput = document.getElementById('user-search');
+        let allUsers = [];
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/v1/users');
+                const data = await response.json();
+
+                if (data.success) {
+                    allUsers = data.data;
+                    renderUsers(allUsers);
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        function renderUsers(users) {
+            usersGrid.innerHTML = '';
+
+            users.forEach((user, index) => {
+                const card = document.createElement('a');
+                card.href = `/users/${user.id}`;
+                card.className = 'challenge-card';
+                card.style.textDecoration = 'none';
+                card.style.animationDelay = `${index * 0.05}s`;
+                card.innerHTML = `
+                <div class="d-flex align-center gap-2 mb-2">
+                    <div style="width: 50px; height: 50px; background: var(--gth-gradient-purple-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">
+                        ${user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3 class="challenge-name mb-0">${user.name}</h3>
+                        {% if get_config('user_mode') == 'teams' %}
+                        <span class="text-muted">${user.team ? user.team.name : 'No Team'}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="challenge-points">${user.score || 0} <span>pts</span></div>
+                <div class="corner-br"></div>
+            `;
+                usersGrid.appendChild(card);
+            });
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(u => u.name.toLowerCase().includes(query));
+            renderUsers(filtered);
+        });
+
+        fetchUsers();
+    })();
+</script>
+{% endblock %}

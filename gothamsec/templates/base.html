@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="{{ get_config('ctf_description') or 'GothamSec CTF - Capture The Flag Competition' }}">
+    <meta name="keywords" content="CTF, Capture The Flag, Cybersecurity, Hacking, GothamSec">
+    <meta name="author" content="GothamSec">
+    <meta name="theme-color" content="#00d9ff">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ get_config('ctf_name') }}">
+    <meta property="og:description"
+        content="{{ get_config('ctf_description') or 'GothamSec CTF - Capture The Flag Competition' }}">
+    <meta property="og:type" content="website">
+
+    <title>{% block title %}{{ get_config("ctf_name") }}{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('views.themes', path='img/favicon.png') }}">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('views.themes', path='css/theme.css') }}">
+
+    {% block head %}{% endblock %}
+
+    <style>
+        /* Inline critical CSS */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10000;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-logo-container">
+            <svg class="loading-logo" viewBox="0 0 100 100" width="120" height="120">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00d9ff" />
+                        <stop offset="100%" style="stop-color:#b026ff" />
+                    </linearGradient>
+                </defs>
+                <!-- Shield outline -->
+                <path d="M50 5 L90 25 L90 55 Q90 75 50 95 Q10 75 10 55 L10 25 Z" fill="none" stroke="url(#logoGradient)"
+                    stroke-width="2" opacity="0.5" />
+                <!-- Bat shape -->
+                <path d="M50 30 L35 45 L20 40 L30 55 L25 70 L50 60 L75 70 L70 55 L80 40 L65 45 Z"
+                    fill="url(#logoGradient)" opacity="0.8" />
+                <!-- Circuit lines -->
+                <path d="M30 50 L40 50 L45 55 L55 55 L60 50 L70 50" fill="none" stroke="#00d9ff" stroke-width="1.5"
+                    stroke-dasharray="100" stroke-dashoffset="100">
+                    <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+                </path>
+            </svg>
+        </div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing...</div>
+    </div>
+
+    <!-- Circuit Background Canvas -->
+    <canvas id="circuit-canvas"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('views.static_html', route='/') }}" class="navbar-brand">
+                <svg class="navbar-logo" viewBox="0 0 100 100" width="45" height="45">
+                    <defs>
+                        <linearGradient id="navLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d9ff" />
+                            <stop offset="100%" style="stop-color:#b026ff" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M50 5 L90 25 L90 55 Q90 75 50 95 Q10 75 10 55 L10 25 Z" fill="none"
+                        stroke="url(#navLogoGradient)" stroke-width="3" />
+                    <path d="M50 30 L35 45 L20 40 L30 55 L25 70 L50 60 L75 70 L70 55 L80 40 L65 45 Z"
+                        fill="url(#navLogoGradient)" />
+                </svg>
+                <span class="navbar-title">{{ get_config("ctf_name") }}</span>
+            </a>
+
+            <button class="navbar-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="navbar-nav">
+                {% if get_config('user_mode') == 'users' %}
+                <li><a href="{{ url_for('users.listing') }}" class="nav-link">Users</a></li>
+                {% elif get_config('user_mode') == 'teams' %}
+                <li><a href="{{ url_for('teams.listing') }}" class="nav-link">Teams</a></li>
+                {% endif %}
+
+                <li><a href="{{ url_for('scoreboard.listing') }}" class="nav-link">Scoreboard</a></li>
+
+                {% if authed() %}
+                <li><a href="{{ url_for('challenges.listing') }}" class="nav-link">Challenges</a></li>
+                <li><a href="{{ url_for('users.private') }}" class="nav-link">Profile</a></li>
+                <li><a href="{{ url_for('views.logout') }}" class="nav-link">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
+                {% if get_config('registration_visibility') != False %}
+                <li><a href="{{ url_for('auth.register') }}" class="nav-link">Register</a></li>
+                {% endif %}
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="page-content" style="padding-top: 90px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-text">
+                    <span>Powered by</span>
+                    <a href="https://ctfd.io" target="_blank" rel="noopener">CTFd</a>
+                    <span>|</span>
+                    <span>Theme by</span>
+                    <span class="text-cyan">GothamSec</span>
+                </div>
+                <div class="footer-links">
+                    {% if get_config('privacy_url') %}
+                    <a href="{{ get_config('privacy_url') }}" class="footer-link">Privacy</a>
+                    {% endif %}
+                    {% if get_config('tos_url') %}
+                    <a href="{{ get_config('tos_url') }}" class="footer-link">Terms</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('views.themes', path='js/theme.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

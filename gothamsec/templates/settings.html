@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px;">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 20vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Settings</h1>
+            <p class="hero-subtitle">Configure your terminal preferences.</p>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="toast {{ category }}" style="position: relative; margin-bottom: 1rem;">
+        <span class="toast-message">{{ message }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Profile Settings -->
+    <div class="glass-panel mb-4">
+        <h2 class="text-cyan mb-3">Profile Information</h2>
+
+        <form method="post" action="{{ url_for('users.settings') }}" id="profile-form">
+            <input type="hidden" name="nonce" value="{{ nonce }}">
+
+            <div class="form-group">
+                <label class="form-label" for="name">Username</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" {% if not
+                    get_config('name_changes') %}disabled{% endif %}>
+                {% if not get_config('name_changes') %}
+                <small class="text-muted">Name changes are disabled</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="affiliation">Affiliation</label>
+                <input type="text" class="form-control" id="affiliation" name="affiliation"
+                    value="{{ user.affiliation or '' }}" placeholder="University, Company, etc.">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="website">Website</label>
+                <input type="url" class="form-control" id="website" name="website" value="{{ user.website or '' }}"
+                    placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="country">Country</label>
+                <input type="text" class="form-control" id="country" name="country" value="{{ user.country or '' }}"
+                    placeholder="Your country">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Update Profile
+            </button>
+        </form>
+    </div>
+
+    <!-- Password Change -->
+    <div class="glass-panel mb-4">
+        <h2 class="text-purple mb-3">Change Password</h2>
+
+        <form method="post" action="{{ url_for('users.settings') }}" id="password-form">
+            <input type="hidden" name="nonce" value="{{ nonce }}">
+
+            <div class="form-group">
+                <label class="form-label" for="current_password">Current Password</label>
+                <input type="password" class="form-control" id="current_password" name="confirm"
+                    placeholder="Enter current password" autocomplete="current-password">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="new_password">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="password"
+                    placeholder="Enter new password" autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="btn btn-secondary">
+                Change Password
+            </button>
+        </form>
+    </div>
+
+    <!-- Token -->
+    <div class="glass-panel">
+        <h2 class="text-cyan mb-3">API Token</h2>
+        <p class="text-muted mb-2">Use this token to access the CTFd API.</p>
+
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="api-token" value="{{ user.token or 'Generate a token' }}"
+                readonly style="font-family: var(--gth-font-mono);">
+            <button class="btn btn-outline" onclick="copyToken()">Copy</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyToken() {
+        const token = document.getElementById('api-token');
+        token.select();
+        document.execCommand('copy');
+        GothamSecToast.success('Token copied to clipboard!');
+    }
+</script>
+{% endblock %}

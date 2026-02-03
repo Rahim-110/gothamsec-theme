@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px;">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 20vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Notifications</h1>
+            <p class="hero-subtitle">Stay updated with the latest announcements.</p>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div id="notifications-list">
+        <!-- Notifications loaded dynamically -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const notificationsList = document.getElementById('notifications-list');
+
+        async function fetchNotifications() {
+            try {
+                const response = await fetch('/api/v1/notifications');
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderNotifications(data.data);
+                } else {
+                    notificationsList.innerHTML = `
+                    <div class="glass-panel text-center">
+                        <p class="text-muted">No notifications yet.</p>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                notificationsList.innerHTML = `
+                <div class="glass-panel text-center">
+                    <p class="text-muted">Failed to load notifications.</p>
+                </div>
+            `;
+            }
+        }
+
+        function renderNotifications(notifications) {
+            notificationsList.innerHTML = notifications.map(notif => `
+            <div class="glass-panel mb-3 animate-fade-in-up">
+                <div class="d-flex justify-between align-center mb-2">
+                    <h3 class="text-cyan mb-0">${notif.title}</h3>
+                    <span class="text-muted" style="font-size: 0.85rem;">${new Date(notif.date).toLocaleString()}</span>
+                </div>
+                <div class="text-secondary">${notif.content}</div>
+            </div>
+        `).join('');
+        }
+
+        fetchNotifications();
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Teams - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 25vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Teams</h1>
+            <p class="hero-subtitle">Unite. Collaborate. Conquer.</p>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-container mb-4">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="team-search" placeholder="Search teams...">
+    </div>
+
+    <!-- Teams Grid -->
+    <div class="challenge-grid" id="teams-grid">
+        <!-- Teams loaded dynamically -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const teamsGrid = document.getElementById('teams-grid');
+        const searchInput = document.getElementById('team-search');
+        let allTeams = [];
+
+        async function fetchTeams() {
+            try {
+                const response = await fetch('/api/v1/teams');
+                const data = await response.json();
+
+                if (data.success) {
+                    allTeams = data.data;
+                    renderTeams(allTeams);
+                }
+            } catch (error) {
+                console.error('Error fetching teams:', error);
+            }
+        }
+
+        function renderTeams(teams) {
+            teamsGrid.innerHTML = '';
+
+            teams.forEach((team, index) => {
+                const card = document.createElement('a');
+                card.href = `/teams/${team.id}`;
+                card.className = 'challenge-card';
+                card.style.textDecoration = 'none';
+                card.style.animationDelay = `${index * 0.05}s`;
+                card.innerHTML = `
+                <div class="d-flex align-center gap-2 mb-2">
+                    <div style="width: 50px; height: 50px; background: var(--gth-gradient-cyan-purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">
+                        ${team.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3 class="challenge-name mb-0">${team.name}</h3>
+                        <span class="text-muted">${team.members ? team.members.length : 0} members</span>
+                    </div>
+                </div>
+                <div class="challenge-points">${team.score || 0} <span>pts</span></div>
+                <div class="corner-br"></div>
+            `;
+                teamsGrid.appendChild(card);
+            });
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allTeams.filter(t => t.name.toLowerCase().includes(query));
+            renderTeams(filtered);
+        });
+
+        fetchTeams();
+    })();
+</script>
+{% endblock %}

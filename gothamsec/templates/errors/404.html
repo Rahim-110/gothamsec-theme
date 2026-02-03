@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-code">404</div>
+    <h2 class="text-purple">Connection Lost</h2>
+    <p class="error-message">The requested resource could not be located in the network.</p>
+
+    <div class="d-flex gap-2 justify-center mt-4">
+        <a href="{{ url_for('views.static_html', route='/') }}" class="btn btn-primary">
+            Return to Base
+        </a>
+        <a href="{{ url_for('challenges.listing') }}" class="btn btn-secondary">
+            View Challenges
+        </a>
+    </div>
+
+    <!-- Glitch Effect SVG -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <filter id="glitch">
+                <feTurbulence type="fractalNoise" baseFrequency="0.00001" numOctaves="1" result="warp" />
+                <feDisplacementMap xChannelSelector="R" yChannelSelector="G" scale="30" in="SourceGraphic" in2="warp" />
+            </filter>
+        </defs>
+    </svg>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Glitch animation for error code
+    const errorCode = document.querySelector('.error-code');
+    let glitchInterval;
+
+    function startGlitch() {
+        errorCode.style.filter = 'url(#glitch)';
+        setTimeout(() => {
+            errorCode.style.filter = 'none';
+        }, 100);
+    }
+
+    // Random glitch effect
+    glitchInterval = setInterval(() => {
+        if (Math.random() > 0.8) {
+            startGlitch();
+        }
+    }, 500);
+</script>
+{% endblock %}
