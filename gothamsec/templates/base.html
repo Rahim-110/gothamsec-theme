@@ -21,6 +21,9 @@
 
     <title>{% block title %}{{ get_config("ctf_name") }}{% endblock %}</title>
 
+    <!-- CSRF Nonce -->
+    <meta name="csrf-nonce" content="{{ nonce }}">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -240,12 +240,17 @@
             }
 
             try {
+                // Get CSRF token from meta tag
+                const csrfMeta = document.querySelector('meta[name="csrf-nonce"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : (init ? init.csrfNonce : '');
+
                 const response = await fetch('/api/v1/challenges/attempt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'CSRF-Token': init.csrfNonce
+                        'CSRF-Token': csrfToken
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         challenge_id: currentChallenge.id,
                         submission: flag
