@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Challenges - {{ get_config("ctf_name") }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero" style="min-height: 30vh; padding: 2rem 0;">
+        <div class="hero-content">
+            <h1 class="hero-title">Challenges</h1>
+            <p class="hero-subtitle">Prove your skills. Capture the flags. Climb the ranks.</p>
+        </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="category-filter" id="category-filter">
+        <button class="category-btn active" data-category="all">All</button>
+        <!-- Categories will be populated dynamically -->
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="challenge-search" placeholder="Search challenges...">
+    </div>
+
+    <!-- Challenge Grid -->
+    <div class="challenge-grid" id="challenge-grid">
+        <!-- Challenges loaded dynamically -->
+    </div>
+</div>
+
+<!-- Challenge Modal -->
+<div class="modal-overlay" id="challenge-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-challenge-name">Challenge Name</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-2">
+                <span class="badge badge-cyan" id="modal-challenge-category">Category</span>
+                <span class="challenge-points" id="modal-challenge-points">100 <span>pts</span></span>
+            </div>
+            <div class="mb-3" id="modal-challenge-description">
+                Challenge description will appear here...
+            </div>
+
+            <!-- Files -->
+            <div class="mb-3" id="modal-challenge-files" style="display: none;">
+                <h4 class="text-cyan mb-1">Files</h4>
+                <div id="modal-files-list"></div>
+            </div>
+
+            <!-- Hints -->
+            <div class="mb-3" id="modal-challenge-hints" style="display: none;">
+                <h4 class="text-purple mb-1">Hints</h4>
+                <div id="modal-hints-list"></div>
+            </div>
+
+            <!-- Flag Submission -->
+            <form id="flag-form" class="mt-3">
+                <div class="form-group">
+                    <label class="form-label">Submit Flag</label>
+                    <input type="text" class="form-control" id="flag-input" placeholder="CTF{...}" autocomplete="off">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="GothamSecModal.hide('challenge-modal')">Close</button>
+            <button class="btn btn-primary" id="submit-flag-btn">Submit Flag</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const challengeGrid = document.getElementById('challenge-grid');
+        const categoryFilter = document.getElementById('category-filter');
+        const searchInput = document.getElementById('challenge-search');
+        let allChallenges = [];
+        let solves = {};
+        let categories = new Set();
+        let currentChallenge = null;
+
+        // Fetch challenges
+        async function fetchChallenges() {
+            try {
+                const response = await fetch('/api/v1/challenges');
+                const data = await response.json();
+
+                if (data.success) {
+                    allChallenges = data.data;
+
+                    // Extract categories
+                    allChallenges.forEach(c => categories.add(c.category));
+
+                    // Fetch solve status
+                    await fetchSolves();
+
+                    renderCategories();
+                    renderChallenges(allChallenges);
+                }
+            } catch (error) {
+                console.error('Error fetching challenges:', error);
+                challengeGrid.innerHTML = '<p class="text-center text-muted">Failed to load challenges</p>';
+            }
+        }
+
+        async function fetchSolves() {
+            try {
+                const response = await fetch('/api/v1/users/me/solves');
+                const data = await response.json();
+                if (data.success) {
+                    data.data.forEach(solve => {
+                        solves[solve.challenge_id] = true;
+                    });
+                }
+            } catch (e) {
+                console.log('Could not fetch solves');
+            }
+        }
+
+        function renderCategories() {
+            const existing = categoryFilter.querySelectorAll('.category-btn:not([data-category="all"])');
+            existing.forEach(btn => btn.remove());
+
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.dataset.category = cat;
+                btn.textContent = cat;
+                btn.addEventListener('click', () => filterByCategory(cat));
+                categoryFilter.appendChild(btn);
+            });
+        }
+
+        function renderChallenges(challenges) {
+            challengeGrid.innerHTML = '';
+
+            if (challenges.length === 0) {
+                challengeGrid.innerHTML = '<p class="text-center text-muted">No challenges found</p>';
+                return;
+            }
+
+            challenges.forEach(challenge => {
+                const card = document.createElement('div');
+                card.className = 'challenge-card' + (solves[challenge.id] ? ' solved' : '');
+                card.innerHTML = `
+                    <span class="badge badge-${solves[challenge.id] ? 'success' : 'cyan'}">${challenge.category}</span>
+                    <h3 class="challenge-name">${challenge.name}</h3>
+                    <div class="challenge-points">${challenge.value} <span>pts</span></div>
+                `;
+                card.addEventListener('click', () => openChallengeModal(challenge));
+                challengeGrid.appendChild(card);
+            });
+        }
+
+        function filterByCategory(category) {
+            // Update active button
+            categoryFilter.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.category === category);
+            });
+
+            if (category === 'all') {
+                renderChallenges(allChallenges);
+            } else {
+                renderChallenges(allChallenges.filter(c => c.category === category));
+            }
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allChallenges.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.category.toLowerCase().includes(query)
+            );
+            renderChallenges(filtered);
+        });
+
+        // Category filter - "All" button
+        categoryFilter.querySelector('[data-category="all"]').addEventListener('click', () => filterByCategory('all'));
+
+        // Challenge Modal
+        async function openChallengeModal(challenge) {
+            currentChallenge = challenge;
+
+            // Fetch full challenge details
+            try {
+                const response = await fetch(`/api/v1/challenges/${challenge.id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const c = data.data;
+
+                    document.getElementById('modal-challenge-name').textContent = c.name;
+                    document.getElementById('modal-challenge-category').textContent = c.category;
+                    document.getElementById('modal-challenge-points').innerHTML = `${c.value} <span>pts</span>`;
+                    document.getElementById('modal-challenge-description').innerHTML = c.description;
+
+                    // Files
+                    const filesContainer = document.getElementById('modal-challenge-files');
+                    const filesList = document.getElementById('modal-files-list');
+                    if (c.files && c.files.length > 0) {
+                        filesContainer.style.display = 'block';
+                        filesList.innerHTML = c.files.map(f =>
+                            `<a href="${f}" class="btn btn-secondary btn-sm" target="_blank" style="margin: 0.25rem;">📁 Download</a>`
+                        ).join('');
+                    } else {
+                        filesContainer.style.display = 'none';
+                    }
+
+                    // Reset flag input
+                    document.getElementById('flag-input').value = '';
+
+                    GothamSecModal.show('challenge-modal');
+                }
+            } catch (error) {
+                console.error('Error fetching challenge:', error);
+            }
+        }
+
+        // Submit flag
+        document.getElementById('submit-flag-btn').addEventListener('click', submitFlag);
+        document.getElementById('flag-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitFlag();
+        });
+
+        async function submitFlag() {
+            if (!currentChallenge) return;
+
+            const flag = document.getElementById('flag-input').value.trim();
+            if (!flag) {
+                GothamSecToast.error('Please enter a flag');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/challenges/attempt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': init.csrfNonce
+                    },
+                    body: JSON.stringify({
+                        challenge_id: currentChallenge.id,
+                        submission: flag
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data.status === 'correct') {
+                    GothamSecToast.success('🎉 Correct! Challenge solved!');
+                    solves[currentChallenge.id] = true;
+                    GothamSecModal.hide('challenge-modal');
+                    renderChallenges(allChallenges);
+                } else if (data.data.status === 'already_solved') {
+                    GothamSecToast.info('You already solved this challenge');
+                } else {
+                    GothamSecToast.error('❌ Incorrect flag. Try again!');
+                }
+            } catch (error) {
+                console.error('Error submitting flag:', error);
+                GothamSecToast.error('Failed to submit flag');
+            }
+        }
+
+        // Initialize
+        fetchChallenges();
+    })();
+</script>
+{% endblock %}
