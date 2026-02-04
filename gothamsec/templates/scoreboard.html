@@ -28,6 +28,15 @@
         </div>
     </div>
 
+    <!-- Score Graph -->
+    <div class="glass-panel mb-4">
+        <h3 class="text-cyan mb-3" style="text-align: center;">Top 10 {{ 'Teams' if get_config('user_mode') == 'teams'
+            else 'Players' }}</h3>
+        <div style="position: relative; height: 400px;">
+            <canvas id="score-graph"></canvas>
+        </div>
+    </div>
+
     <!-- Top 3 Podium -->
     <div class="d-flex justify-center align-center gap-3 mb-4" id="podium" style="flex-wrap: wrap; display: none;">
         <!-- 2nd Place -->
@@ -56,10 +65,9 @@
         <table class="scoreboard-table">
             <thead>
                 <tr>
-                    <th style="width: 80px;">Rank</th>
+                    <th style="width: 80px;">Place</th>
                     <th>{{ 'Team' if get_config('user_mode') == 'teams' else 'Player' }}</th>
                     <th style="width: 120px;">Score</th>
-                    <th style="width: 200px;">Progress</th>
                 </tr>
             </thead>
             <tbody id="scoreboard-body">
@@ -71,17 +79,37 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+
 <script>
     (function () {
         const scoreboardBody = document.getElementById('scoreboard-body');
         const podium = document.getElementById('podium');
+        const scoreGraphCanvas = document.getElementById('score-graph');
         let standings = [];
         let maxScore = 0;
+        let scoreChart = null;
+
+        // GothamSec color palette for chart
+        const chartColors = [
+            '#00d9ff', // cyan
+            '#b026ff', // purple
+            '#ff2a6d', // pink
+            '#05d9e8', // green/teal
+            '#ff6b35', // orange
+            '#ffd700', // gold
+            '#7b68ee', // medium slate blue
+            '#00ff7f', // spring green
+            '#ff1493', // deep pink
+            '#1e90ff'  // dodger blue
+        ];
 
         async function fetchScoreboard() {
             try {
-                // Try the scoreboard endpoint
-                let response = await fetch('/api/v1/scoreboard');
+                const response = await fetch('/api/v1/scoreboard');
 
                 if (!response.ok) {
                     throw new Error('Scoreboard API returned ' + response.status);
@@ -98,13 +126,127 @@
                     renderPodium();
                     renderScoreboard();
                     updateStats();
+                    fetchGraphData();
                 } else {
-                    scoreboardBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No scoreboard data available</td></tr>';
+                    scoreboardBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No scoreboard data available</td></tr>';
                 }
             } catch (error) {
                 console.error('Error fetching scoreboard:', error);
-                scoreboardBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Failed to load scoreboard</td></tr>';
+                scoreboardBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Failed to load scoreboard</td></tr>';
             }
+        }
+
+        async function fetchGraphData() {
+            try {
+                const response = await fetch('/api/v1/scoreboard/top/10');
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (data.success && data.data) {
+                    renderGraph(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching graph data:', error);
+            }
+        }
+
+        function renderGraph(topTeams) {
+            if (!topTeams || topTeams.length === 0) return;
+
+            const datasets = [];
+
+            topTeams.forEach((team, index) => {
+                if (team.solves && team.solves.length > 0) {
+                    // Build cumulative score over time
+                    let cumulativeScore = 0;
+                    const dataPoints = [];
+
+                    // Sort solves by date
+                    const sortedSolves = team.solves.sort((a, b) =>
+                        new Date(a.date) - new Date(b.date)
+                    );
+
+                    sortedSolves.forEach(solve => {
+                        cumulativeScore += solve.value || 0;
+                        dataPoints.push({
+                            x: new Date(solve.date),
+                            y: cumulativeScore
+                        });
+                    });
+
+                    datasets.push({
+                        label: team.name,
+                        data: dataPoints,
+                        borderColor: chartColors[index % chartColors.length],
+                        backgroundColor: chartColors[index % chartColors.length] + '20',
+                        tension: 0.1,
+                        fill: false,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    });
+                }
+            });
+
+            if (datasets.length === 0) return;
+
+            // Destroy existing chart if any
+            if (scoreChart) {
+                scoreChart.destroy();
+            }
+
+            scoreChart = new Chart(scoreGraphCanvas, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                tooltipFormat: 'MMM d, HH:mm'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#888'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#888'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ccc',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 10, 15, 0.9)',
+                            titleColor: '#00d9ff',
+                            bodyColor: '#fff',
+                            borderColor: '#00d9ff',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
         }
 
         function renderPodium() {
@@ -125,7 +267,6 @@
 
             standings.forEach((entry, index) => {
                 const row = document.createElement('tr');
-                const progress = maxScore > 0 ? (entry.score / maxScore) * 100 : 0;
 
                 let rankClass = '';
                 if (index === 0) rankClass = 'rank-1';
@@ -148,11 +289,6 @@
                 <td>
                     <span class="score-value">${entry.score}</span>
                 </td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${progress}%"></div>
-                    </div>
-                </td>
             `;
 
                 scoreboardBody.appendChild(row);
@@ -161,27 +297,30 @@
 
         async function updateStats() {
             try {
-                // Get total challenges
                 const chalResp = await fetch('/api/v1/challenges');
                 const chalData = await chalResp.json();
                 if (chalData.success) {
                     document.getElementById('total-challenges').textContent = chalData.data.length;
                 }
 
-                // Total participants
                 document.getElementById('total-teams').textContent = standings.length;
 
-                // Calculate total solves (approximation)
-                const totalSolves = standings.reduce((acc, entry) => acc + (entry.score > 0 ? 1 : 0), 0);
-                document.getElementById('total-solves').textContent = totalSolves;
+                // Calculate total solves
+                let totalSolves = 0;
+                standings.forEach(team => {
+                    if (team.solves) {
+                        totalSolves += team.solves.length;
+                    }
+                });
+                document.getElementById('total-solves').textContent = totalSolves || standings.length;
 
             } catch (error) {
                 console.error('Error updating stats:', error);
             }
         }
 
-        // Auto-refresh every 30 seconds
-        setInterval(fetchScoreboard, 30000);
+        // Auto-refresh every 60 seconds
+        setInterval(fetchScoreboard, 60000);
 
         // Initialize
         fetchScoreboard();
