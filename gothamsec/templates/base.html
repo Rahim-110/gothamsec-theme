@@ -1033,8 +1033,10 @@
             warning: function (msg) { this.show(msg, 'warning'); }
         };
 
-        // CSRF token for API requests (if available)
-        const init = window.init || { csrfNonce: '' };
+        // CSRF token for API requests
+        var init = {
+            csrfNonce: "{{ nonce }}"
+        };
     </script>
 
     {% block scripts %}{% endblock %}
